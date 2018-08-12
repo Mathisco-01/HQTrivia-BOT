@@ -3,16 +3,22 @@ import boto3
 from datetime import datetime, time
 import jmespath
 import json
-import urllib
+from urllib.request import Request, urlopen
 from bs4 import BeautifulSoup
 
-t1 = datetime.now()
 
-cwd = os.getcwd()
+
 
 if __name__ == "__main__":
+	
+	cwd = os.getcwd()
 	bucketName ='hqtriviabucket'
-	photo = 'screenshot.jpg'
+	photo = 'screenshot.png'
+	response = ""
+	question = ""
+	awnsers = []
+	resultStatsList = []
+
 
 	rkClient=boto3.client('rekognition', region_name='eu-west-1')
 	s3Client=boto3.resource('s3',  region_name='eu-west-3')
@@ -50,24 +56,52 @@ def getAwnser():
 	for i in range(3):
 			awnsers.append(lineList[(-i-1)]) 
 		
-	return question, awnsers	
+		
 
 		
+def googleIt(q, a):
+	print(q)#question string
+	print(a)#awnsers list
+	
+
+
+	for i in range(3):
+		r = ""
+		#url = "http://www.google.com/#hl=en&q={}+{}".format(q.replace(" ","+"), a[i].replace(" ", "+"))
+		url = "http://www.google.com/search?q={}+{}".format(q.replace(" ","+"), a[i].replace(" ", "+"))
+
+		req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+		webpage = urlopen(req).read()
+		soup = BeautifulSoup(webpage)
+		print(url) 
+		results = str(soup.find_all("div", id="resultStats"))
+		print(results)
+
+		for i in range(len(results)):
+			if(results[i].isdigit() == True): 
+				r += results[i]
+			else:
+				pass
+		resultStatsList.append(r)
+		
+	return resultStatsList
+
+
+
+
 
 array = []
 
 
-#upload()
-#checkText()
-question, awnsers = getAwnser()
-print(question)
-print(awnsers)
+upload()
+print("Upload Complete")
+checkText()
+print("Text Checked")
+print(question, awnsers)
+getAwnser()
+print("Awnsers recieved")
+resultStatList = googleIt(question, awnsers)
 
 
-url = 'http://www.oldbaileyonline.org/browse.jsp?id=t17800628-33&div=t17800628-33'
-response = urllib2.urlopen(url)
-webContent = response.read()
-
-t2 = datetime.now()
-
-print(t2 - t1)
+print(resultStatList)
+print(max(resultStatList))
